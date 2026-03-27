@@ -19,13 +19,17 @@ export default function Deals() {
 
   useEffect(() => { loadDeals() }, [city])
 
-  const showCode = (dealId: string) => {
-    if (!codes[dealId]) {
-      const code = Math.random().toString(36).substring(2, 8).toUpperCase()
-      setCodes({...codes, [dealId]: code})
-    }
+  const showCode = async (dealId: string) => {
+  if (!codes[dealId]) {
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase()
+    await supabase.from('redemptions').insert([{
+      deal_id: dealId,
+      code: code,
+      redeemed: false
+    }])
+    setCodes({...codes, [dealId]: code})
   }
-
+}
   return (
     <div className="min-h-screen bg-gray-950 p-6">
       <h1 className="text-3xl font-bold text-white mb-2">Deals Near You</h1>
