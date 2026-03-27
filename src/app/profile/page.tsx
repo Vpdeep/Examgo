@@ -34,8 +34,8 @@ export default function ProfilePage() {
     { label: 'Admit Card Uploaded', done: !!student?.admit_card_url },
     { label: 'Verified', done: !!student?.is_verified },
     { label: 'Exam Day', done: false },
-    { label: 'Result Uploaded', done: false },
-    { label: 'Scholar Tier Assigned', done: false },
+    { label: 'Result Uploaded', done: !!student?.score },
+    { label: 'Scholar Tier Assigned', done: !!student?.scholar_tier },
   ]
 
   const currentStep = steps.filter(function(s) { return s.done }).length
@@ -61,7 +61,6 @@ export default function ProfilePage() {
         </div>
         <p className="text-gray-400 text-sm">📞 {student.phone}</p>
         <p className="text-gray-400 text-sm">✉️ {student.email}</p>
-
         {editing ? (
           <div className="space-y-2 pt-2">
             <input className="w-full bg-[#1f2937] text-white rounded px-3 py-2 text-sm" value={city} onChange={function(e) { setCity(e.target.value) }} placeholder="City" />
@@ -79,6 +78,24 @@ export default function ProfilePage() {
             </div>
             <button onClick={() => setEditing(true)} className="text-xs text-blue-400 underline">Edit</button>
           </div>
+        )}
+      </div>
+
+      <div className="bg-[#111827] rounded-xl p-5 mb-6">
+        <h3 className="text-sm font-semibold mb-3 text-gray-300">Scholar Status</h3>
+        {student.scholar_tier ? (
+          <div className={"inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold " +
+            (student.scholar_tier === 'Platinum' ? 'bg-cyan-900 text-cyan-300' :
+            student.scholar_tier === 'Gold' ? 'bg-yellow-900 text-yellow-300' :
+            student.scholar_tier === 'Silver' ? 'bg-gray-700 text-gray-200' :
+            student.scholar_tier === 'Bronze' ? 'bg-orange-900 text-orange-300' :
+            'bg-green-900 text-green-300')}>
+            ★ {student.scholar_tier}
+          </div>
+        ) : student.score ? (
+          <p className="text-yellow-400 text-sm">Result under review — your scholar tier will be assigned within 24 hrs.</p>
+        ) : (
+          <p className="text-gray-500 text-sm">Upload your result to unlock scholarships — <Link href="/scholar" className="text-blue-400 underline">Go to Scholar</Link></p>
         )}
       </div>
 
