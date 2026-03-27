@@ -91,6 +91,29 @@ export default function ScholarPage() {
           )
         })}
       </div>
+      {submitted && (
+        <div className="mt-6">
+          <h2 className="text-lg font-semibold mb-4">Scholarship Offers for You</h2>
+          {[
+            { name: 'Allen Career Institute', offer: '90% fee waiver', tiers: ['Platinum'], location: 'Kota' },
+            { name: 'Aakash Institute', offer: '75% fee waiver', tiers: ['Platinum', 'Gold'], location: 'Delhi' },
+            { name: 'FIITJEE', offer: '50% fee waiver', tiers: ['Platinum', 'Gold', 'Silver'], location: 'Pan India' },
+            { name: 'Resonance', offer: '40% fee waiver', tiers: ['Gold', 'Silver'], location: 'Kota' },
+            { name: 'Vedantu', offer: '30% fee waiver', tiers: ['Silver', 'Bronze'], location: 'Online' },
+            { name: 'Unacademy', offer: '25% fee waiver', tiers: ['Bronze', 'Merit'], location: 'Online' },
+          ].filter(function(o) { return o.tiers.includes(tier?.tier) }).map(function(offer) {
+            return (
+              <div key={offer.name} className="bg-[#111827] rounded-lg p-4 mb-2 flex justify-between items-center">
+                <div>
+                  <p className="font-medium text-sm">{offer.name}</p>
+                  <p className="text-gray-400 text-xs">{offer.location}</p>
+                </div>
+                <span className="bg-green-700 text-white text-xs px-3 py-1 rounded-full">{offer.offer}</span>
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
