@@ -1,89 +1,85 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import Link from 'next/link'
 
 export default function Dashboard() {
-  const [phone, setPhone] = useState('')
   const [student, setStudent] = useState<any>(null)
   const [deals, setDeals] = useState<any[]>([])
-  const [redemptions, setRedemptions] = useState<any[]>([])
-  const [error, setError] = useState('')
-  const [daysLeft, setDaysLeft] = useState(0)
+  const [phone, setPhone] = useState('')
+  const [inputPhone, setInputPhone] = useState('')
+  const [notFound, setNotFound] = useState(false)
 
-  const loadDashboard = async () => {
-    setError('')
-    const { data } = await supabase.from('students').select('*').eq('phone', phone).single()
-    if (!data) { setError('Phone number not found'); return }
-    setStudent(data)
-    const examDate = new Date(data.exam_date)
-    const today = new Date()
-    const diff = Math.ceil((examDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-    setDaysLeft(diff)
-    const { data: dealsData } = await supabase.from('deals').select('*').eq('city', data.city).eq('active', true)
-    setDeals(dealsData || [])
-    const { data: redemptionsData } = await supabase.from('redemptions').select('*').eq('student_id', data.id)
-    setRedemptions(redemptionsData || [])
+  const loadStudent = async (p: string) => {
+    const { data } = await supabase.from('students').select('*').eq('phone', p).limit(1)
+    if (data && data.length > 0) {
+      setStudent(data[0])
+      localStorage.setItem('studentPhone', p)
+      supabase.from('deals').select('*').eq('active', true).ilike('city', data[0].city).then(({ data: d }) => setDeals(d || []))
+    } else {
+      setNotFound(true)
+    }
   }
 
+  useEffect(() => {
+    const saved = localStorage.getItem('studentPhone')
+    if (saved) { setPhone(saved); loadStudent(saved) }
+  }, [])
+
+  const daysToExam = student?.exam_date ? Math.ceil((new Date(student.exam_date).getTime() - Date.now()) / 86400000) : null
+
   if (!student) return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
-      <div className="bg-gray-900 p-8 rounded-xl w-full max-w-md">
-        <h1 className="text-2xl font-bold text-white mb-6">My Dashboard</h1>
-        {error && <p className="text-red-400 mb-4">{error}</p>}
-        <input placeholder="Enter your mobile number" className="w-full bg-gray-800 text-white p-3 rounded-lg mb-4" value={phone} onChange={e => setPhone(e.target.value)} maxLength={10} />
-        <button onClick={loadDashboard} className="w-full bg-blue-600 text-white font-bold p-3 rounded-lg">View Dashboard</button>
+    <div className="min-h-screen bg-[#0a0f1e] text-white flex items-center justify-center">
+      <div className="bg-[#111827] p-8 rounded-xl w-full max-w-sm">
+        <h1 className="text-xl font-bold mb-4">My Dashboard</h1>
+        {notFound && <p className="text-red-400 text-sm mb-3">Phone number not found</p>}
+        <input
+          className="w-full bg-[#1f2937] text-white rounded px-3 py-2 mb-3"
+          placeholder="Enter your phone number"
+          value={inputPhone}
+          onChange={function(e) { setInputPhone(e.target.value); setNotFound(false) }}
+        />
+        <button onClick={() => loadStudent(inputPhone)} className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold">View Dashboard</button>
       </div>
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-gray-950 p-6">
-      <h1 className="text-3xl font-bold text-white mb-6">Welcome, {student.name}!</h1>
+    <div className="min-h-screen bg-[#0a0f1e] text-white p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Welcome, {student.name}!</h1>
+        <Link href="/profile" className="text-sm text-blue-400 underline">My Profile</Link>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div className="bg-gray-900 p-4 rounded-xl">
-          <p className="text-gray-400 text-sm">Verification Status</p>
-          <span className={`px-3 py-1 rounded-full text-sm font-bold ${student.verified ? 'bg-green-700 text-green-200' : 'bg-yellow-700 text-yellow-200'}`}>
-            {student.verified ? '✅ Verified' : '⏳ Pending'}
-          </span>
+      <div className="grid grid-cols-3 gap-4 mb-8">
+        <div className="bg-[#111827] rounded-xl p-4">
+          <p className="text-xs text-gray-400 mb-1">Verification Status</p>
+          {student.is_verified ? <span className="bg-green-600 text-white text-xs px-3 py-1 rounded-full">✓ Verified</span> : <span className="bg-yellow-600 text-white text-xs px-3 py-1 rounded-full">Pending</span>}
         </div>
-        <div className="bg-gray-900 p-4 rounded-xl">
-          <p className="text-gray-400 text-sm">Exam</p>
-          <p className="text-white font-bold">{student.exam_name}</p>
-          <p className="text-gray-400 text-sm">{student.exam_date}</p>
+        <div className="bg-[#111827] rounded-xl p-4">
+          <p className="text-xs text-gray-400 mb-1">Exam</p>
+          <p className="font-semibold">{student.exam_name}</p>
+          <p className="text-xs text-gray-400">{student.exam_date}</p>
         </div>
-        <div className="bg-blue-900 p-4 rounded-xl text-center">
-          <p className="text-4xl font-bold text-blue-300">{daysLeft}</p>
-          <p className="text-blue-200">Days to Exam</p>
+        <div className="bg-blue-700 rounded-xl p-4 text-center">
+          <p className="text-4xl font-bold">{daysToExam ?? '--'}</p>
+          <p className="text-sm">Days to Exam</p>
         </div>
       </div>
 
-      <h2 className="text-xl font-bold text-white mb-4">Available Deals in {student.city} ({deals.length})</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-        {deals.map(deal => (
-          <div key={deal.id} className="bg-gray-900 p-4 rounded-xl flex justify-between items-center">
+      <h2 className="text-lg font-semibold mb-3">Available Deals in {student.city} ({deals.length})</h2>
+      {deals.map(function(deal) {
+        return (
+          <div key={deal.id} className="bg-[#111827] rounded-lg p-4 mb-2 flex justify-between items-center">
             <div>
-              <p className="text-white font-bold">{deal.title}</p>
-              <p className="text-gray-400 text-sm">{deal.description}</p>
+              <p className="font-medium text-sm">{deal.title}</p>
+              <p className="text-gray-400 text-xs">{deal.description}</p>
             </div>
-            {deal.discount_percent > 0 && <span className="bg-blue-600 text-white font-bold px-3 py-1 rounded-lg">{deal.discount_percent}%</span>}
+            <span className="bg-blue-600 text-white text-xs px-3 py-1 rounded-full">{deal.discount_percent}%</span>
           </div>
-        ))}
-      </div>
-
-      {redemptions.length > 0 && (
-        <>
-          <h2 className="text-xl font-bold text-white mb-4">My Deal Codes</h2>
-          <div className="space-y-2">
-            {redemptions.map(r => (
-              <div key={r.id} className="bg-gray-900 p-4 rounded-xl flex justify-between">
-                <p className="text-white font-bold tracking-widest">{r.code}</p>
-                <span className={`text-sm ${r.redeemed ? 'text-yellow-400' : 'text-green-400'}`}>{r.redeemed ? 'Redeemed' : 'Active'}</span>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
+        )
+      })}
+      {deals.length === 0 && <p className="text-gray-500 text-sm">No deals in your city yet.</p>}
     </div>
   )
 }
