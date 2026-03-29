@@ -10,6 +10,15 @@ const SLABS = [
   { tier: 'Merit', min: 0, color: 'text-green-400', bg: 'bg-green-900' },
 ]
 
+const INSTITUTES = [
+  { name: 'Allen Career Institute', offer: '90% fee waiver', tiers: ['Platinum'], location: 'Kota', phone: '9999900001' },
+  { name: 'Aakash Institute', offer: '75% fee waiver', tiers: ['Platinum', 'Gold'], location: 'Delhi', phone: '9999900002' },
+  { name: 'FIITJEE', offer: '50% fee waiver', tiers: ['Platinum', 'Gold', 'Silver'], location: 'Pan India', phone: '9999900003' },
+  { name: 'Resonance', offer: '40% fee waiver', tiers: ['Gold', 'Silver'], location: 'Kota', phone: '9999900004' },
+  { name: 'Vedantu', offer: '30% fee waiver', tiers: ['Silver', 'Bronze'], location: 'Online', phone: '9999900005' },
+  { name: 'Unacademy', offer: '25% fee waiver', tiers: ['Bronze', 'Merit'], location: 'Online', phone: '9999900006' },
+]
+
 function getTier(percentile: number) {
   return SLABS.find(function(s) { return percentile >= s.min }) || SLABS[4]
 }
@@ -21,6 +30,8 @@ export default function ScholarPage() {
   const [submitted, setSubmitted] = useState(false)
   const [tier, setTier] = useState<any>(null)
   const [loading, setLoading] = useState(false)
+  const [appliedIds, setAppliedIds] = useState<string[]>([])
+  const [applyMsg, setApplyMsg] = useState('')
 
   useEffect(() => {
     const phone = localStorage.getItem('studentPhone')
@@ -29,10 +40,14 @@ export default function ScholarPage() {
       const s = data?.[0]
       setStudent(s)
       if (s?.score && s?.scholar_tier) {
-        setScore(s.score)
+        setScore(String(s.score))
+        setTotal(String(s.total_marks || 100))
         setTier(getTier(Number(s.percentile || 0)))
         setSubmitted(true)
       }
+    })
+    supabase.from('scholar_leads').select('institute_name').eq('student_phone', phone).then(({ data }) => {
+      setAppliedIds((data || []).map(function(l: any) { return l.institute_name }))
     })
   }, [])
 
@@ -51,6 +66,24 @@ export default function ScholarPage() {
     setSubmitted(true)
     setLoading(false)
   }
+
+  const handleApply = async (institute: any) => {
+    const { error } = await supabase.from('scholar_leads').insert([{
+      student_phone: student.phone,
+      student_name: student.name,
+      student_city: student.city,
+      exam_name: student.exam_name,
+      scholar_tier: tier.tier,
+      institute_name: institute.name,
+      institute_phone: institute.phone,
+      offer: institute.offer,
+    }])
+    if (error) { alert('Error: ' + error.message); return }
+    setAppliedIds([...appliedIds, institute.name])
+    setApplyMsg('Applied to ' + institute.name + '! They will contact you soon.')
+  }
+
+  const percentile = total ? Math.round((Number(score) / Number(total)) * 100) : 0
 
   return (
     <div className="min-h-screen bg-[#0a0f1e] text-white p-6 max-w-2xl mx-auto">
@@ -76,11 +109,11 @@ export default function ScholarPage() {
         <div className={"rounded-xl p-6 mb-6 text-center " + tier?.bg}>
           <p className="text-sm text-gray-300 mb-1">Your Scholar Tier</p>
           <p className={"text-5xl font-bold mb-2 " + tier?.color}>{tier?.tier}</p>
-          <p className="text-gray-300 text-sm">Score: {score} — Percentile: {Math.round((Number(score) / Number(total)) * 100)}%</p>
+          <p className="text-gray-300 text-sm">Score: {score} — Percentile: {percentile}%</p>
         </div>
       )}
 
-      <div className="bg-[#111827] rounded-xl p-5">
+      <div className="bg-[#111827] rounded-xl p-5 mb-6">
         <h2 className="text-lg font-semibold mb-4">Tier Breakdown</h2>
         {SLABS.map(function(s) {
           return (
@@ -91,24 +124,25 @@ export default function ScholarPage() {
           )
         })}
       </div>
+
       {submitted && (
-        <div className="mt-6">
+        <div>
           <h2 className="text-lg font-semibold mb-4">Scholarship Offers for You</h2>
-          {[
-            { name: 'Allen Career Institute', offer: '90% fee waiver', tiers: ['Platinum'], location: 'Kota' },
-            { name: 'Aakash Institute', offer: '75% fee waiver', tiers: ['Platinum', 'Gold'], location: 'Delhi' },
-            { name: 'FIITJEE', offer: '50% fee waiver', tiers: ['Platinum', 'Gold', 'Silver'], location: 'Pan India' },
-            { name: 'Resonance', offer: '40% fee waiver', tiers: ['Gold', 'Silver'], location: 'Kota' },
-            { name: 'Vedantu', offer: '30% fee waiver', tiers: ['Silver', 'Bronze'], location: 'Online' },
-            { name: 'Unacademy', offer: '25% fee waiver', tiers: ['Bronze', 'Merit'], location: 'Online' },
-          ].filter(function(o) { return o.tiers.includes(tier?.tier) }).map(function(offer) {
+          {applyMsg && <p className="text-green-400 text-sm mb-3">{applyMsg}</p>}
+          {INSTITUTES.filter(function(o) { return o.tiers.includes(tier?.tier) }).map(function(offer) {
+            const applied = appliedIds.includes(offer.name)
             return (
               <div key={offer.name} className="bg-[#111827] rounded-lg p-4 mb-2 flex justify-between items-center">
                 <div>
                   <p className="font-medium text-sm">{offer.name}</p>
-                  <p className="text-gray-400 text-xs">{offer.location}</p>
+                  <p className="text-gray-400 text-xs">{offer.location} · {offer.offer}</p>
                 </div>
-                <span className="bg-green-700 text-white text-xs px-3 py-1 rounded-full">{offer.offer}</span>
+                <button
+                  onClick={function() { if (!applied) handleApply(offer) }}
+                  className={"text-xs px-3 py-1.5 rounded-full font-semibold " + (applied ? 'bg-green-700 text-white' : 'bg-blue-600 text-white')}
+                >
+                  {applied ? 'Applied ✓' : 'Apply Now'}
+                </button>
               </div>
             )
           })}
