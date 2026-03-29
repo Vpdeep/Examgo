@@ -91,7 +91,7 @@ export default function AdminPanel() {
       </div>
 
       {tab === 'stats' && (
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
           {[
             { label: 'Total Students', value: students.length, color: 'text-blue-400' },
             { label: 'Verified Students', value: students.filter(function(s) { return s.is_verified }).length, color: 'text-green-400' },

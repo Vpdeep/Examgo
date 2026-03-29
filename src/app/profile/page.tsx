@@ -48,7 +48,7 @@ export default function ProfilePage() {
   )
 
   return (
-    <div className="min-h-screen bg-[#0a0f1e] text-white p-6 max-w-2xl mx-auto">
+    <div className="min-h-screen bg-[#0a0f1e] text-white p-4 sm:p-6 max-w-2xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">My Profile</h1>
         <Link href="/dashboard" className="text-sm text-blue-400 underline">← Dashboard</Link>

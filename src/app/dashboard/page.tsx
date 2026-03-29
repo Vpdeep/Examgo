@@ -51,7 +51,7 @@ export default function Dashboard() {
         <Link href="/profile" className="text-sm text-blue-400 underline">My Profile</Link>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-3">
         <div className="bg-[#111827] rounded-xl p-4">
           <p className="text-xs text-gray-400 mb-1">Verification Status</p>
           {student.is_verified ? <span className="bg-green-600 text-white text-xs px-3 py-1 rounded-full">✓ Verified</span> : <span className="bg-yellow-600 text-white text-xs px-3 py-1 rounded-full">Pending</span>}
