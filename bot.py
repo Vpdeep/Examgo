@@ -2,9 +2,10 @@ import httpx
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 
-TELEGRAM_TOKEN = "8341178430:AAFNGin4XurtZWXhtFMVMrpSFC6Jm1fM-tg"
-SUPABASE_URL = "https://aqetmalvgaqhhzkduqok.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxZXRtYWx2Z2FxaGh6a2R1cW9rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NDc5MzcsImV4cCI6MjA5MDEyMzkzN30.jLpl85pNXgMK_4rdWgje3DW4gWLdfwJBo77RTkv9mQ0"
+import os
+TELEGRAM_TOKEN = os.environ.get("BOT_TOKEN", "8341178430:AAFNGin4XurtZWXhtFMVMrpSFC6Jm1fM-tg")
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://aqetmalvgaqhhzkduqok.supabase.co")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxZXRtYWx2Z2FxaGh6a2R1cW9rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NDc5MzcsImV4cCI6MjA5MDEyMzkzN30.jLpl85pNXgMK_4rdWgje3DW4gWLdfwJBo77RTkv9mQ0")
 
 def query_supabase(table, filters={}):
     url = SUPABASE_URL + "/rest/v1/" + table
