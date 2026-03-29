@@ -13,6 +13,10 @@ export default function AdminPanel() {
   const [deals, setDeals] = useState<any[]>([])
   const [redemptions, setRedemptions] = useState<any[]>([])
   const [scholarLeads, setScholarLeads] = useState<any[]>([])
+  const [broadcastMsg, setBroadcastMsg] = useState('')
+  const [broadcastCity, setBroadcastCity] = useState('')
+  const [broadcastExam, setBroadcastExam] = useState('')
+  const [broadcastResult, setBroadcastResult] = useState('')
 
   useEffect(() => {
     if (!authed) return
@@ -39,12 +43,21 @@ export default function AdminPanel() {
   }
 
   const exportCSV = (data: any[], filename: string) => {
-    const keys = Object.keys(data[0] || {})
+    if (!data.length) { alert('No data to export'); return }
+    const keys = Object.keys(data[0])
     const csv = [keys.join(','), ...data.map(function(row) { return keys.map(function(k) { return row[k] }).join(',') })].join('\n')
     const a = document.createElement('a')
     a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv)
     a.download = filename
     a.click()
+  }
+
+  const handleBroadcast = () => {
+    let targets = students
+    if (broadcastCity) targets = targets.filter(function(s) { return s.city?.toLowerCase() === broadcastCity.toLowerCase() })
+    if (broadcastExam) targets = targets.filter(function(s) { return s.exam_name?.toLowerCase().includes(broadcastExam.toLowerCase()) })
+    const phones = targets.map(function(s) { return s.phone }).join(', ')
+    setBroadcastResult('Message ready for ' + targets.length + ' students.\nPhones: ' + phones + '\n\nMessage: ' + broadcastMsg)
   }
 
   const todayRedemptions = redemptions.filter(function(r) {
@@ -59,29 +72,18 @@ export default function AdminPanel() {
     <div className="min-h-screen bg-[#0a0f1e] text-white flex items-center justify-center">
       <div className="bg-[#111827] p-8 rounded-xl w-full max-w-sm">
         <h1 className="text-xl font-bold mb-4">Admin Login</h1>
-        <input
-          type="password"
-          className="w-full bg-[#1f2937] text-white rounded px-3 py-2 mb-3"
-          placeholder="Enter password"
-          value={password}
-          onChange={function(e) { setPassword(e.target.value) }}
-        />
-        <button
-          onClick={function() { if (password === ADMIN_PASSWORD) setAuthed(true); else alert('Wrong password') }}
-          className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold"
-        >
-          Login
-        </button>
+        <input type="password" className="w-full bg-[#1f2937] text-white rounded px-3 py-2 mb-3" placeholder="Enter password" value={password} onChange={function(e) { setPassword(e.target.value) }} />
+        <button onClick={function() { if (password === ADMIN_PASSWORD) setAuthed(true); else alert('Wrong password') }} className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold">Login</button>
       </div>
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-[#0a0f1e] text-white p-6 max-w-5xl mx-auto">
+    <div className="min-h-screen bg-[#0a0f1e] text-white p-4 sm:p-6 max-w-5xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">Admin Panel</h1>
 
       <div className="flex gap-2 mb-6 flex-wrap">
-        {['stats', 'students', 'merchants', 'deals', 'scholar'].map(function(t) {
+        {['stats', 'students', 'merchants', 'deals', 'scholar', 'broadcast'].map(function(t) {
           return (
             <button key={t} onClick={() => setTab(t)} className={"px-4 py-2 rounded-lg text-sm font-semibold capitalize " + (tab === t ? 'bg-blue-600' : 'bg-[#111827]')}>
               {t}
@@ -203,6 +205,30 @@ export default function AdminPanel() {
             )
           })}
           {scholarLeads.length === 0 && <p className="text-gray-500 text-sm">No leads yet.</p>}
+        </div>
+      )}
+
+      {tab === 'broadcast' && (
+        <div className="max-w-xl">
+          <h2 className="text-lg font-semibold mb-4">Broadcast Message</h2>
+          <div className="bg-[#111827] rounded-xl p-5 space-y-4">
+            <div>
+              <label className="text-xs text-gray-400 mb-1 block">Message</label>
+              <textarea className="w-full bg-[#1f2937] text-white rounded px-3 py-2 text-sm h-24" placeholder="JEE Mains tomorrow! Here are deals near your centre..." value={broadcastMsg} onChange={function(e) { setBroadcastMsg(e.target.value) }} />
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 mb-1 block">Filter by City (optional)</label>
+              <input className="w-full bg-[#1f2937] text-white rounded px-3 py-2 text-sm" placeholder="e.g. Hyderabad" value={broadcastCity} onChange={function(e) { setBroadcastCity(e.target.value) }} />
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 mb-1 block">Filter by Exam (optional)</label>
+              <input className="w-full bg-[#1f2937] text-white rounded px-3 py-2 text-sm" placeholder="e.g. JEE Mains" value={broadcastExam} onChange={function(e) { setBroadcastExam(e.target.value) }} />
+            </div>
+            <button onClick={handleBroadcast} className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-semibold">Preview Broadcast</button>
+            {broadcastResult && (
+              <div className="bg-[#1f2937] rounded-lg p-3 text-xs text-gray-300 whitespace-pre-wrap">{broadcastResult}</div>
+            )}
+          </div>
         </div>
       )}
     </div>
