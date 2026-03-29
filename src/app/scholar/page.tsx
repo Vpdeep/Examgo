@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { Spinner } from '@/components/ui/spinner'
 
 const SLABS = [
   { tier: 'Platinum', min: 90, color: 'text-cyan-400', bg: 'bg-cyan-900' },
@@ -20,128 +21,206 @@ const INSTITUTES = [
 ]
 
 function getTier(percentile: number) {
-  return SLABS.find(function(s) { return percentile >= s.min }) || SLABS[4]
+  return SLABS.find((s) => percentile >= s.min) || SLABS[4]
 }
 
 export default function ScholarPage() {
-  const [student, setStudent] = useState<any>(null)
+  const [student, setStudent] = useState<Record<string, unknown> | null>(null)
   const [score, setScore] = useState('')
   const [total, setTotal] = useState('')
   const [submitted, setSubmitted] = useState(false)
-  const [tier, setTier] = useState<any>(null)
+  const [tier, setTier] = useState<(typeof SLABS)[0] | null>(null)
   const [loading, setLoading] = useState(false)
   const [appliedIds, setAppliedIds] = useState<string[]>([])
   const [applyMsg, setApplyMsg] = useState('')
+  const [applyLoading, setApplyLoading] = useState<string | null>(null)
+  const [bootLoading, setBootLoading] = useState(true)
 
   useEffect(() => {
-    const phone = localStorage.getItem('studentPhone')
-    if (!phone) return
-    supabase.from('students').select('*').eq('phone', phone).limit(1).then(({ data }) => {
-      const s = data?.[0]
-      setStudent(s)
-      if (s?.score && s?.scholar_tier) {
-        setScore(String(s.score))
-        setTotal(String(s.total_marks || 100))
-        setTier(getTier(Number(s.percentile || 0)))
-        setSubmitted(true)
+    const run = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        setBootLoading(false)
+        return
       }
-    })
-    supabase.from('scholar_leads').select('institute_name').eq('student_phone', phone).then(({ data }) => {
-      setAppliedIds((data || []).map(function(l: any) { return l.institute_name }))
-    })
+      const { data: s } = await supabase.from('students').select('*').maybeSingle()
+      if (s) {
+        setStudent(s as Record<string, unknown>)
+        localStorage.setItem('studentPhone', String(s.phone))
+        if (s.score && s.scholar_tier) {
+          setScore(String(s.score))
+          setTotal(String(s.total_marks || 100))
+          setTier(getTier(Number(s.percentile || 0)))
+          setSubmitted(true)
+        }
+        const { data: leads } = await supabase
+          .from('scholar_leads')
+          .select('institute_name')
+          .eq('student_phone', s.phone)
+        setAppliedIds((leads || []).map((l: { institute_name: string }) => l.institute_name))
+      }
+      setBootLoading(false)
+    }
+    run()
   }, [])
 
   const handleSubmit = async () => {
-    if (!score || !total) { alert('Enter score and total marks'); return }
+    const sc = Number(score)
+    const tot = Number(total)
+    if (!Number.isFinite(sc) || !Number.isFinite(tot) || tot <= 0 || sc < 0 || sc > tot) {
+      alert('Enter valid score and total marks')
+      return
+    }
+    if (!student?.id) return
     setLoading(true)
-    const percentile = Math.round((Number(score) / Number(total)) * 100)
+    const percentile = Math.round((sc / tot) * 100)
     const t = getTier(percentile)
-    await supabase.from('students').update({
-      score: Number(score),
-      total_marks: Number(total),
-      percentile,
-      scholar_tier: t.tier
-    }).eq('id', student.id)
+    await supabase
+      .from('students')
+      .update({
+        score: sc,
+        total_marks: tot,
+        percentile,
+        scholar_tier: t.tier,
+      })
+      .eq('id', student.id as string)
     setTier(t)
     setSubmitted(true)
     setLoading(false)
   }
 
-  const handleApply = async (institute: any) => {
-    const { error } = await supabase.from('scholar_leads').insert([{
-      student_phone: student.phone,
-      student_name: student.name,
-      student_city: student.city,
-      exam_name: student.exam_name,
-      scholar_tier: tier.tier,
-      institute_name: institute.name,
-      institute_phone: institute.phone,
-      offer: institute.offer,
-    }])
-    if (error) { alert('Error: ' + error.message); return }
+  const handleApply = async (institute: (typeof INSTITUTES)[0]) => {
+    if (!student?.phone) return
+    setApplyLoading(institute.name)
+    setApplyMsg('')
+    const { error } = await supabase.from('scholar_leads').insert([
+      {
+        student_phone: student.phone,
+        student_name: student.name,
+        student_city: student.city,
+        exam_name: student.exam_name,
+        scholar_tier: tier?.tier,
+        institute_name: institute.name,
+        institute_phone: institute.phone,
+        offer: institute.offer,
+      },
+    ])
+    setApplyLoading(null)
+    if (error) {
+      alert('Error: ' + error.message)
+      return
+    }
     setAppliedIds([...appliedIds, institute.name])
     setApplyMsg('Applied to ' + institute.name + '! They will contact you soon.')
   }
 
   const percentile = total ? Math.round((Number(score) / Number(total)) * 100) : 0
 
+  if (bootLoading) {
+    return (
+      <div className="min-h-screen bg-[#0a0f1e] text-white flex items-center justify-center p-4">
+        <Spinner className="size-8 text-blue-400" />
+      </div>
+    )
+  }
+
+  if (!student) {
+    return (
+      <div className="min-h-screen bg-[#0a0f1e] text-white p-6 max-w-2xl mx-auto">
+        <p className="text-gray-400">Sign in from the dashboard to use the Scholar program.</p>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-[#0a0f1e] text-white p-6 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-2">Scholar Program</h1>
+    <div className="min-h-screen bg-[#0a0f1e] text-white p-4 sm:p-6 max-w-2xl mx-auto min-w-0">
+      <h1 className="text-xl sm:text-2xl font-bold mb-2">Scholar Program</h1>
       <p className="text-gray-400 text-sm mb-6">Upload your result to get your scholarship tier</p>
 
       {!submitted ? (
-        <div className="bg-[#111827] rounded-xl p-5 mb-6">
+        <div className="bg-[#111827] rounded-xl p-5 mb-6 min-w-0">
           <h2 className="text-lg font-semibold mb-4">Enter Your Result</h2>
           <div className="mb-4">
             <label className="text-sm text-gray-400 mb-1 block">Your Score</label>
-            <input className="w-full bg-[#1f2937] text-white rounded px-3 py-2" value={score} onChange={function(e) { setScore(e.target.value) }} placeholder="e.g. 180" />
+            <input
+              className="w-full min-w-0 bg-[#1f2937] text-white rounded px-3 py-2 text-base"
+              value={score}
+              onChange={(e) => setScore(e.target.value.replace(/[^\d.]/g, ''))}
+              placeholder="e.g. 180"
+              inputMode="decimal"
+            />
           </div>
           <div className="mb-4">
             <label className="text-sm text-gray-400 mb-1 block">Total Marks</label>
-            <input className="w-full bg-[#1f2937] text-white rounded px-3 py-2" value={total} onChange={function(e) { setTotal(e.target.value) }} placeholder="e.g. 300" />
+            <input
+              className="w-full min-w-0 bg-[#1f2937] text-white rounded px-3 py-2 text-base"
+              value={total}
+              onChange={(e) => setTotal(e.target.value.replace(/[^\d.]/g, ''))}
+              placeholder="e.g. 300"
+              inputMode="decimal"
+            />
           </div>
-          <button onClick={handleSubmit} disabled={loading} className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold">
-            {loading ? 'Submitting...' : 'Submit Result'}
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold inline-flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            {loading ? <Spinner className="text-white" /> : null}
+            {loading ? 'Submitting…' : 'Submit Result'}
           </button>
         </div>
       ) : (
-        <div className={"rounded-xl p-6 mb-6 text-center " + tier?.bg}>
+        <div className={'rounded-xl p-6 mb-6 text-center min-w-0 ' + (tier?.bg || '')}>
           <p className="text-sm text-gray-300 mb-1">Your Scholar Tier</p>
-          <p className={"text-5xl font-bold mb-2 " + tier?.color}>{tier?.tier}</p>
-          <p className="text-gray-300 text-sm">Score: {score} — Percentile: {percentile}%</p>
+          <p className={'text-4xl sm:text-5xl font-bold mb-2 break-words ' + (tier?.color || '')}>{tier?.tier}</p>
+          <p className="text-gray-300 text-sm">
+            Score: {score} — Percentile: {percentile}%
+          </p>
         </div>
       )}
 
-      <div className="bg-[#111827] rounded-xl p-5 mb-6">
+      <div className="bg-[#111827] rounded-xl p-5 mb-6 min-w-0">
         <h2 className="text-lg font-semibold mb-4">Tier Breakdown</h2>
-        {SLABS.map(function(s) {
-          return (
-            <div key={s.tier} className="flex justify-between items-center py-2 border-b border-gray-800">
-              <span className={"font-semibold " + s.color}>{s.tier}</span>
-              <span className="text-gray-400 text-sm">{s.min}%+ percentile</span>
-            </div>
-          )
-        })}
+        {SLABS.map((s) => (
+          <div key={s.tier} className="flex justify-between items-center py-2 border-b border-gray-800 gap-2 min-w-0">
+            <span className={'font-semibold shrink-0 ' + s.color}>{s.tier}</span>
+            <span className="text-gray-400 text-sm text-right">{s.min}%+ percentile</span>
+          </div>
+        ))}
       </div>
 
       {submitted && (
-        <div>
+        <div className="min-w-0">
           <h2 className="text-lg font-semibold mb-4">Scholarship Offers for You</h2>
-          {applyMsg && <p className="text-green-400 text-sm mb-3">{applyMsg}</p>}
-          {INSTITUTES.filter(function(o) { return o.tiers.includes(tier?.tier) }).map(function(offer) {
+          {applyMsg && <p className="text-green-400 text-sm mb-3 break-words">{applyMsg}</p>}
+          {INSTITUTES.filter((o) => o.tiers.includes(tier?.tier || '')).map((offer) => {
             const applied = appliedIds.includes(offer.name)
+            const busy = applyLoading === offer.name
             return (
-              <div key={offer.name} className="bg-[#111827] rounded-lg p-4 mb-2 flex justify-between items-center">
-                <div>
-                  <p className="font-medium text-sm">{offer.name}</p>
-                  <p className="text-gray-400 text-xs">{offer.location} · {offer.offer}</p>
+              <div
+                key={offer.name}
+                className="bg-[#111827] rounded-lg p-4 mb-2 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 min-w-0"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium text-sm break-words">{offer.name}</p>
+                  <p className="text-gray-400 text-xs break-words">
+                    {offer.location} · {offer.offer}
+                  </p>
                 </div>
                 <button
-                  onClick={function() { if (!applied) handleApply(offer) }}
-                  className={"text-xs px-3 py-1.5 rounded-full font-semibold " + (applied ? 'bg-green-700 text-white' : 'bg-blue-600 text-white')}
+                  type="button"
+                  onClick={() => {
+                    if (!applied && !busy) handleApply(offer)
+                  }}
+                  disabled={applied || busy}
+                  className={
+                    'text-xs px-3 py-1.5 rounded-full font-semibold shrink-0 inline-flex items-center justify-center gap-2 min-h-[36px] ' +
+                    (applied ? 'bg-green-700 text-white' : 'bg-blue-600 text-white disabled:opacity-50')
+                  }
                 >
-                  {applied ? 'Applied ✓' : 'Apply Now'}
+                  {busy ? <Spinner className="text-white size-3" /> : null}
+                  {applied ? 'Applied ✓' : busy ? 'Applying…' : 'Apply Now'}
                 </button>
               </div>
             )

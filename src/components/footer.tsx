@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button"
+import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 
 export function Footer() {
@@ -13,10 +13,13 @@ export function Footer() {
           <p className="text-muted-foreground text-lg mb-8 max-w-xl mx-auto">
             Join thousands of students already saving money and earning rewards with ExamGo.
           </p>
-          <Button size="lg" className="px-8 py-6 rounded-xl gap-2 bg-primary hover:bg-primary/90 text-primary-foreground text-lg">
+          <Link
+            href="/register"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-8 py-6 text-lg font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
             Register Now
             <ArrowRight className="w-5 h-5" />
-          </Button>
+          </Link>
         </div>
 
         {/* Footer Links */}
@@ -48,8 +51,8 @@ export function Footer() {
           <div>
             <h3 className="font-semibold text-foreground mb-4">Legal</h3>
             <ul className="space-y-3">
-              <li><a href="#" className="text-muted-foreground hover:text-foreground text-sm transition-colors">Privacy Policy</a></li>
-              <li><a href="#" className="text-muted-foreground hover:text-foreground text-sm transition-colors">Terms of Service</a></li>
+              <li><Link href="/privacy" className="text-muted-foreground hover:text-foreground text-sm transition-colors">Privacy Policy</Link></li>
+              <li><Link href="/terms" className="text-muted-foreground hover:text-foreground text-sm transition-colors">Terms of Service</Link></li>
               <li><a href="#" className="text-muted-foreground hover:text-foreground text-sm transition-colors">Refund Policy</a></li>
             </ul>
           </div>

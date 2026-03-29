@@ -9,7 +9,7 @@ export default function CityPage() {
   const [deals, setDeals] = useState<any[]>([])
 
   useEffect(() => {
-    supabase.from('deals').select('*').eq('is_active', true).ilike('city', city).then(({ data }) => setDeals(data || []))
+    supabase.from('deals').select('*').eq('active', true).ilike('city', city).then(({ data }) => setDeals(data || []))
   }, [city])
 
   return (
