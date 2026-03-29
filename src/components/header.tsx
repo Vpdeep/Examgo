@@ -6,9 +6,9 @@ import { useState } from "react"
 
 const navLinks = [
   { label: "How it Works", href: "#how-it-works" },
-  { label: "Features", href: "#features" },
+  { label: "Deals", href: "/deals" },
   { label: "Scholarships", href: "/scholar" },
-  { label: "Contact", href: "mailto:support@examgo.in" },
+  { label: "Partner With Us", href: "/partners" },
 ]
 
 export function Header() {
