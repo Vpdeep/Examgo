@@ -41,9 +41,11 @@ export function Header() {
 
           {/* Desktop CTA */}
           <div className="hidden md:block">
-            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
-              Register Now
-            </Button>
+            <a href="/register">
+  <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
+    Register Now
+  </Button>
+</a>
           </div>
 
           {/* Mobile Menu Button */}
