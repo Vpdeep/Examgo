@@ -33,10 +33,12 @@ export function Hero() {
 
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <Button size="lg" className="w-full sm:w-auto text-lg px-8 py-6 rounded-xl gap-2 bg-primary hover:bg-primary/90 text-primary-foreground">
-            Register Now
-            <ArrowRight className="w-5 h-5" />
-          </Button>
+          <a href="/register">
+  <Button size="lg" className="w-full sm:w-auto text-lg px-8 py-6 rounded-xl gap-2 bg-primary hover:bg-primary/90 text-primary-foreground">
+    Register Now
+    <ArrowRight className="w-5 h-5" />
+  </Button>
+</a>      
           <Button variant="outline" size="lg" className="w-full sm:w-auto text-lg px-8 py-6 rounded-xl border-border text-foreground hover:bg-secondary">
             Learn More
           </Button>
