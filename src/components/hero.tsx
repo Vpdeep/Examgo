@@ -47,16 +47,16 @@ export function Hero() {
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 sm:gap-8 mt-16 max-w-lg mx-auto">
           <div className="text-center">
-            <div className="text-2xl sm:text-3xl font-bold text-foreground">50K+</div>
-            <div className="text-sm text-muted-foreground">Students</div>
+            <div className="text-2xl sm:text-3xl font-bold text-foreground">500+</div>
+            <div className="text-sm text-muted-foreground">Students Registered</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl sm:text-3xl font-bold text-foreground">500+</div>
-            <div className="text-sm text-muted-foreground">Partner Hotels</div>
+            <div className="text-2xl sm:text-3xl font-bold text-foreground">10+</div>
+            <div className="text-sm text-muted-foreground">Partner Merchants</div>
           </div>
           <div className="text-2xl text-center">
-            <div className="text-2xl sm:text-3xl font-bold text-foreground">₹2Cr+</div>
-            <div className="text-sm text-muted-foreground">Scholarships</div>
+            <div className="text-2xl sm:text-3xl font-bold text-foreground">₹50L+</div>
+            <div className="text-sm text-muted-foreground">Scholarships Available</div>
           </div>
         </div>
       </div>
