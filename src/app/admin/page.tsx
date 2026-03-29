@@ -12,6 +12,7 @@ export default function AdminPanel() {
   const [merchants, setMerchants] = useState<any[]>([])
   const [deals, setDeals] = useState<any[]>([])
   const [redemptions, setRedemptions] = useState<any[]>([])
+  const [scholarLeads, setScholarLeads] = useState<any[]>([])
 
   useEffect(() => {
     if (!authed) return
@@ -19,6 +20,7 @@ export default function AdminPanel() {
     supabase.from('merchants').select('*').then(({ data }) => setMerchants(data || []))
     supabase.from('deals').select('*').then(({ data }) => setDeals(data || []))
     supabase.from('redemptions').select('*').then(({ data }) => setRedemptions(data || []))
+    supabase.from('scholar_leads').select('*').then(({ data }) => setScholarLeads(data || []))
   }, [authed])
 
   const handleVerify = async (id: string, status: boolean) => {
@@ -79,7 +81,7 @@ export default function AdminPanel() {
       <h1 className="text-2xl font-bold mb-6">Admin Panel</h1>
 
       <div className="flex gap-2 mb-6 flex-wrap">
-        {['stats', 'students', 'merchants', 'deals'].map(function(t) {
+        {['stats', 'students', 'merchants', 'deals', 'scholar'].map(function(t) {
           return (
             <button key={t} onClick={() => setTab(t)} className={"px-4 py-2 rounded-lg text-sm font-semibold capitalize " + (tab === t ? 'bg-blue-600' : 'bg-[#111827]')}>
               {t}
@@ -98,7 +100,7 @@ export default function AdminPanel() {
             { label: 'Redemptions Today', value: todayRedemptions, color: 'text-pink-400' },
             { label: 'Redemptions This Week', value: weekRedemptions, color: 'text-orange-400' },
             { label: 'Active Deals', value: deals.filter(function(d) { return d.active }).length, color: 'text-cyan-400' },
-            { label: 'Total Deals', value: deals.length, color: 'text-gray-400' },
+            { label: 'Scholar Leads', value: scholarLeads.length, color: 'text-indigo-400' },
           ].map(function(stat) {
             return (
               <div key={stat.label} className="bg-[#111827] rounded-xl p-4 text-center">
@@ -175,6 +177,32 @@ export default function AdminPanel() {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {tab === 'scholar' && (
+        <div>
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="text-lg font-semibold">Scholar Leads ({scholarLeads.length})</h2>
+            <button onClick={() => exportCSV(scholarLeads, 'scholar_leads.csv')} className="bg-green-600 text-white text-sm px-3 py-1.5 rounded-lg">Export CSV</button>
+          </div>
+          {scholarLeads.map(function(l) {
+            return (
+              <div key={l.id} className="bg-[#111827] rounded-lg p-4 mb-2">
+                <div className="flex justify-between items-center flex-wrap gap-2">
+                  <div>
+                    <p className="font-medium text-sm">{l.student_name} — {l.scholar_tier}</p>
+                    <p className="text-gray-400 text-xs">{l.exam_name} · {l.student_city} · {l.student_phone}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-blue-400 text-xs font-semibold">{l.institute_name}</p>
+                    <p className="text-gray-400 text-xs">{l.offer}</p>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+          {scholarLeads.length === 0 && <p className="text-gray-500 text-sm">No leads yet.</p>}
         </div>
       )}
     </div>
